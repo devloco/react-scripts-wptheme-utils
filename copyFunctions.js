@@ -7,6 +7,7 @@
 "use strict";
 
 const fs = require("fs-extra");
+const { rm } = require("shelljs");
 const wpThemePostInstallerInfo = require("@devloco/create-react-wptheme-utils/postInstallerInfo");
 
 const copyFunctions = {
@@ -20,6 +21,9 @@ const copyFunctions = {
         fs.copySync(paths.appBuild, "..", {
             dereference: true
         });
+    },
+    cleanThemeFolder: function() {
+        rm("-rf", "../static");
     }
 };
 
