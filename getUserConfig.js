@@ -1,0 +1,89 @@
+/**
+ * Copyright (c) 2018-present, devloco
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+"use strict";
+
+const fs = require("fs-extra");
+const chalk = require("chalk");
+const path = require("path");
+const wpThemePostInstallerInfo = require("@devloco/create-react-wptheme-utils/postInstallerInfo");
+
+function _writeUserConfig(paths, configName, configString) {
+    let configPath = path.join(paths.appPath, configName);
+    fs.writeFileSync(configPath, configString);
+}
+
+function _getUserConfig(paths, configName, defaultConfig) {
+    let userConfig = null;
+    try {
+        userConfig = require(path.join(paths.appPath, configName));
+    } catch (err) {
+        userConfig = JSON.stringify(defaultConfig, null, 4);
+        _writeUserConfig(paths, configName, userConfig);
+        return defaultConfig;
+    }
+
+    return userConfig;
+}
+
+const userDevConfigName = "user.dev.json";
+const userProdConfigName = "user.prod.json";
+
+module.exports = function(paths, nodeEnv) {
+    const appPackageJson = require(paths.appPackageJson);
+
+    const defaultUserDevConfig = {
+        fileWatcherPlugin: {
+            touchFile: "./public/index.php",
+            ignored: "./public/index.php",
+            watchFileGlobs: ["./public/**/*.js", "./public/**/*.css", "./public/**/*.php"]
+        },
+        wpThemeServer: {
+            enable: true,
+            hostname: "__from-window__",
+            port: 8090,
+            watchFile: "../index.php"
+        },
+        injectWpThemeClient: {
+            override: null,
+            mode: "beforeToken",
+            token: "</body>",
+            file: "./build/index.php"
+        }
+    };
+
+    const defaultUserProdConfig = {
+        ensureTrailingSlash: true,
+        homepage: appPackageJson.homepage
+    };
+
+    // Create both files ASAP.
+    if (!wpThemePostInstallerInfo.postInstallerExists(paths)) {
+        _getUserConfig(paths, userDevConfigName, defaultUserDevConfig);
+        _getUserConfig(paths, userProdConfigName, defaultUserProdConfig);
+    }
+
+    if (wpThemePostInstallerInfo.postInstallerExists(paths)) {
+        return null;
+    }
+
+    if (typeof nodeEnv !== "string") {
+        nodeEnv = process.env.NODE_ENV;
+    }
+
+    switch (nodeEnv) {
+        case "dev":
+        case "development":
+            return _getUserConfig(paths, userDevConfigName, defaultUserDevConfig);
+        case "build":
+        case "prod":
+        case "production":
+            return _getUserConfig(paths, userProdConfigName, defaultUserProdConfig);
+        default:
+            console.log(chalk.red(`Unknown env.NODE_ENV: ${nodeEnv}`));
+            return null;
+    }
+};
