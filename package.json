@@ -1,0 +1,26 @@
+{
+  "name": "create-react-wptheme-utils",
+  "version": "0.0.1",
+  "description": "Utilities used by create-react-wptheme.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devloco/react-scripts-wptheme-utils.git"
+  },
+  "keywords": [
+    "WordPress",
+    "ReactJs",
+    "react-scripts",
+    "react-scripts-wptheme",
+    "utilities"
+  ],
+  "author": "devloco",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/devloco/react-scripts-wptheme-utils/issues"
+  },
+  "homepage": "https://github.com/devloco/react-scripts-wptheme-utils#readme"
+}
