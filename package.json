@@ -1,6 +1,6 @@
 {
     "name": "@devloco/create-react-wptheme-utils",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "description": "Utilities used by create-react-wptheme.",
     "engines": {
         "node": ">=8"
