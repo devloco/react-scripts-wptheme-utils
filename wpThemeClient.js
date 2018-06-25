@@ -1,3 +1,10 @@
+/**
+ * Copyright (c) 2018-present, devloco
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
 var wpThemeClient = {
     start: function(configHostname, configPort) {
         if (configHostname !== "__from-window__" || (typeof configHostname !== "string" && configHostname.length <= 0)) {

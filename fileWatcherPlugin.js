@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-//
+///
 /// big thanks to:
 /// https://www.npmjs.com/package/filewatcher-webpack-plugin
 ///
@@ -25,7 +25,7 @@
 //      }),
 /// ],
 /// ...
-//
+///
 
 "use strict";
 
