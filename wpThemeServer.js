@@ -9,7 +9,7 @@
 
 const WebSocket = require("ws");
 
-const _getUserConfig = require("@devloco/create-react-wptheme-utils/getUserConfig");
+const _getUserConfig = require("@devloco/react-scripts-wptheme-utils/getUserConfig");
 const _typeBuildError = "errors";
 const _typeBuildSuccess = "content-changed";
 const _typeBuildWarning = "warnings";
@@ -87,7 +87,7 @@ const wpThemeServer = {
         }
 
         const phpStuff = `<?php $BRC_TEMPLATE_PATH = parse_url(get_template_directory_uri(), PHP_URL_PATH); ?>`;
-        const jsTag = "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/create-react-wptheme-utils/wpThemeClient.js'></script>\n";
+        const jsTag = "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-utils/wpThemeClient.js'></script>\n";
         const jsCall = `<script> wpThemeClient.start("${_serverConfig.hostname}", "${_serverConfig.port}"); </script>\n`;
 
         let toInject = [];

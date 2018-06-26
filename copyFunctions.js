@@ -9,7 +9,7 @@
 
 const fs = require("fs-extra");
 const { rm } = require("shelljs");
-const wpThemePostInstallerInfo = require("@devloco/create-react-wptheme-utils/postInstallerInfo");
+const wpThemePostInstallerInfo = require("@devloco/react-scripts-wptheme-utils/postInstallerInfo");
 
 const copyFunctions = {
     copyPublicFolder: function(paths) {
