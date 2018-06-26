@@ -13,11 +13,19 @@
         "url": "git+https://github.com/devloco/react-scripts-wptheme-utils.git"
     },
     "keywords": [
-        "WordPress",
-        "ReactJs",
+        "wordpress",
         "create-react-app",
-        "react-scripts",
-        "react-scripts-wptheme"
+        "wordpress-theme",
+        "wordpress-development",
+        "wordpress-starter-theme",
+        "wordpress-api",
+        "reactjs",
+        "react",
+        "react-theme",
+        "wordpress-server",
+        "react-tutorial",
+        "react-wordpress-themes",
+        "php"
     ],
     "author": "devloco",
     "license": "MIT",
