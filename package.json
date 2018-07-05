@@ -1,6 +1,6 @@
 {
     "name": "@devloco/react-scripts-wptheme-utils",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "Utilities used by react-scripts-wptheme.",
     "engines": {
         "node": ">=8"
@@ -39,11 +39,13 @@
         "getUserConfig.js",
         "postInstallerInfo.js",
         "wpThemeClient.js",
-        "shell-js.js",
-        "wpThemeServer.js"
+        "wpThemeServer.js",
+        "shell-js.js"
     ],
     "dependencies": {
         "chokidar": "^2.0.2",
+        "react-dev-utils": "^5.0.1",
+        "react-error-overlay": "^4.0.0",
         "shelljs": "^0.8.2",
         "ws": "^5.2.0"
     },
