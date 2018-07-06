@@ -47,7 +47,7 @@
         "react-dev-utils": "5.0.1",
         "shelljs": "^0.8.2",
         "ws": "^5.2.0",
-        "@devloco/react-scripts-wptheme-error-overlay": "^1.0.1"
+        "@devloco/react-scripts-wptheme-error-overlay": "^1.0.2"
     },
     "devDependencies": {}
 }
