@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-present, devloco
+ * Copyright (c) 2018-present, https://github.com/devloco
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -87,22 +87,25 @@ const wpThemeServer = {
         }
 
         const phpStuff = `<?php $BRC_TEMPLATE_PATH = parse_url(get_template_directory_uri(), PHP_URL_PATH); ?>`;
-        const jsTag = "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-utils/wpThemeClient.js'></script>\n";
+        const jsTags = [
+            "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-utils/wpThemeClient.js'></script>",
+            "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-error-overlay/wpThemeErrorOverlay.js'></script>\n"
+        ];
         const jsCall = `<script> wpThemeClient.start("${_serverConfig.hostname}", "${_serverConfig.port}"); </script>\n`;
 
         let toInject = [];
         switch (mode) {
             case "afterToken":
                 // note in this case, we put the token back into the file (i.e. the token is something you want to keep in the file like "</body>").
-                toInject = [token, phpStuff, jsTag, jsCall];
+                toInject = [token, phpStuff, jsTags.join("\n"), jsCall];
                 break;
             case "beforeToken":
                 // note in this case, we put the token back into the file (i.e. the token is something you want to keep in the file like "</body>").
-                toInject = [phpStuff, jsTag, jsCall, token];
+                toInject = [phpStuff, jsTags.join("\n"), jsCall, token];
                 break;
             case "endOfFile":
             case "replaceToken":
-                toInject = [phpStuff, jsTag, jsCall];
+                toInject = [phpStuff, jsTags.join("\n"), jsCall];
                 break;
             default:
                 console.log(chalk.magenta(`wpstart::injectWpThemeClient: unknown inject mode: ${mode}.`));

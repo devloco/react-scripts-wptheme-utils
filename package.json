@@ -34,7 +34,7 @@
     },
     "homepage": "https://github.com/devloco/react-scripts-wptheme-utils#readme",
     "files": [
-        "copyFunctions.js",
+        "fileFunctions.js",
         "fileWatcherPlugin.js",
         "getUserConfig.js",
         "postInstallerInfo.js",
@@ -44,12 +44,10 @@
     ],
     "dependencies": {
         "chokidar": "^2.0.2",
-        "react-dev-utils": "^5.0.1",
-        "react-error-overlay": "^4.0.0",
+        "react-dev-utils": "5.0.1",
         "shelljs": "^0.8.2",
-        "ws": "^5.2.0"
+        "ws": "^5.2.0",
+        "@devloco/react-scripts-wptheme-error-overlay": "^1.0.1"
     },
-    "devDependencies": {
-        "react-dev-utils": "^5.0.1"
-    }
+    "devDependencies": {}
 }

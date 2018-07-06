@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2018-present, devloco
+ * Copyright (c) 2018-present, https://github.com/devloco
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -30,17 +30,26 @@ var wpThemeClient = {
             if (response && typeof response.data === "string") {
                 try {
                     var msg = JSON.parse(response.data);
-                    console.log(msg);
                     if (msg) {
                         switch (msg.type) {
                             case "content-changed":
                                 window.location.reload();
                                 break;
                             case "errors":
-                                console.log("ERRORS", msg.stats.errors);
+                                try {
+                                    wpThemeErrorOverlay.handleErrors(msg.stats.errors);
+                                } catch (err) {
+                                    console.log("'errors' try block error:", err);
+                                    console.log("Compile ERRORS", msg);
+                                }
                                 break;
                             case "warnings":
-                                console.log("WARNINGS", msg.stats.warnings);
+                                try {
+                                    wpThemeErrorOverlay.handleWarnings(msg.stats.warnings);
+                                } catch (err) {
+                                    console.log("'warnings' try block error:", err);
+                                    console.log("Compile WARNINGS", err, msg);
+                                }
                                 break;
                         }
                     }
