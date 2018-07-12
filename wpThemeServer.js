@@ -7,6 +7,7 @@
 
 "use strict";
 
+const fs = require("fs");
 const WebSocket = require("ws");
 
 const _getUserConfig = require("@devloco/react-scripts-wptheme-utils/getUserConfig");
@@ -14,13 +15,13 @@ const _typeBuildError = "errors";
 const _typeBuildSuccess = "content-changed";
 const _typeBuildWarning = "warnings";
 
-var _server;
+var _webSocketServer;
 var _lastStats = null;
 var _lastBuildEvent = null;
 
 function _sendMessage(buildEvent, stats) {
-    if (_server) {
-        _server.clients.forEach((ws) => {
+    if (_webSocketServer) {
+        _webSocketServer.clients.forEach((ws) => {
             if (ws.isAlive === true) {
                 let msg = JSON.stringify({
                     now: new Date().getTime().toString(),
@@ -38,8 +39,8 @@ function _sendMessage(buildEvent, stats) {
     }
 }
 
-function _startServer(portNum) {
-    _server = new WebSocket.Server({ port: portNum });
+function _startServer(portNum, cert, key) {
+    _webSocketServer = new WebSocket.Server({ port: portNum });
 
     const noop = function() {};
 
@@ -47,7 +48,7 @@ function _startServer(portNum) {
         this.isAlive = true;
     };
 
-    _server.on("connection", (ws) => {
+    _webSocketServer.on("connection", (ws) => {
         ws.isAlive = true;
         ws.on("pong", heartbeat);
 
@@ -56,12 +57,12 @@ function _startServer(portNum) {
         }
     });
 
-    _server.on("close", (code) => {
+    _webSocketServer.on("close", (code) => {
         console.error(`wpThemeServer exited with code ${code}`);
     });
 
     const interval = setInterval(() => {
-        _server.clients.forEach((ws) => {
+        _webSocketServer.clients.forEach((ws) => {
             if (ws.isAlive === false) {
                 console.log("Browser refresh server: CONNECTION TERMINATED", ws);
                 return ws.terminate();
@@ -86,12 +87,23 @@ const wpThemeServer = {
             return _clientInjectString;
         }
 
+        let wsProtocol = "ws";
+        if (typeof _serverConfig.sslCert === "string" && _serverConfig.sslCert.length > 0) {
+            if (typeof _serverConfig.sslKey === "string" && _serverConfig.sslKey.length > 0) {
+                wsProtocol = "wss";
+            }
+        }
+
         const phpStuff = `<?php $BRC_TEMPLATE_PATH = parse_url(get_template_directory_uri(), PHP_URL_PATH); ?>`;
         const jsTags = [
             "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-utils/wpThemeClient.js'></script>",
             "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-error-overlay/wpThemeErrorOverlay.js'></script>\n"
         ];
-        const jsCall = `<script> wpThemeClient.start("${_serverConfig.hostname}", "${_serverConfig.port}"); </script>\n`;
+        const jsCall = `<script>
+        if (wpThemeClient && typeof wpThemeClient.start === "function") {
+            wpThemeClient.start("${wsProtocol}", "${_serverConfig.hostname}", "${_serverConfig.port}");
+        }
+        </script>\n`;
 
         let toInject = [];
         switch (mode) {
@@ -128,7 +140,21 @@ const wpThemeServer = {
         let configPort = _serverConfig && typeof _serverConfig.port === "number" ? _serverConfig.port : null;
         const portNum = parseInt(process.env.PORT, 10) || configPort || 8090;
         if (portNum > 0) {
-            _startServer(portNum);
+            let cert = null;
+            let key = null;
+            if (typeof _serverConfig.sslCert === "string" && _serverConfig.sslCert.length > 0) {
+                if (typeof _serverConfig.sslKey === "string" && _serverConfig.sslKey.length > 0) {
+                    try {
+                        cert = fs.readFileSync(_serverConfig.sslCert);
+                        key = fs.readFileSync(_serverConfig.sslKey);
+                    } catch (err) {
+                        console.log("cert and/or key not found err:", err);
+                        return;
+                    }
+                }
+            }
+
+            _startServer(portNum, cert, key);
             console.log("Browser refresh server ready.");
         }
     },

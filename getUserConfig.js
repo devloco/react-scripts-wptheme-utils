@@ -46,6 +46,8 @@ module.exports = function(paths, nodeEnv) {
             enable: true,
             hostname: "__from-window__",
             port: 8090,
+            sslCert: null,
+            sslKey: null,
             watchFile: "../index.php"
         },
         injectWpThemeClient: {

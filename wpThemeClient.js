@@ -6,10 +6,12 @@
  */
 
 var wpThemeClient = {
-    start: function(configHostname, configPort) {
-        if (configHostname !== "__from-window__" || (typeof configHostname !== "string" && configHostname.length <= 0)) {
-            console.log("WPTHEME CLIENT: hostname is not '__from-window__' or a non-empty string: ", configHostname);
-            return;
+    start: function(wsProtocol, configHostname, configPort) {
+        if (configHostname !== "__from-window__") {
+            if (typeof configHostname !== "string" || configHostname.length <= 0) {
+                console.log("WPTHEME CLIENT: hostname is not '__from-window__' or a non-empty string: ", configHostname);
+                return;
+            }
         }
 
         var parsedConfigPort = null;
@@ -23,7 +25,7 @@ var wpThemeClient = {
 
         var hostName = configHostname === "__from-window__" ? window.location.hostname : configHostname;
         var portNum = configPort === "__from-window__" ? window.location.port : parsedConfigPort;
-        var host = "ws://" + hostName + ":" + portNum;
+        var host = wsProtocol + "://" + hostName + ":" + portNum;
 
         var socket = new WebSocket(host);
         socket.onmessage = function(response) {
