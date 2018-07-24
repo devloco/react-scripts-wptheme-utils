@@ -8,6 +8,7 @@
 "use strict";
 
 const fs = require("fs");
+const https = require("https");
 const WebSocket = require("ws");
 
 const _getUserConfig = require("@devloco/react-scripts-wptheme-utils/getUserConfig");
@@ -15,9 +16,28 @@ const _typeBuildError = "errors";
 const _typeBuildSuccess = "content-changed";
 const _typeBuildWarning = "warnings";
 
-var _webSocketServer;
-var _lastStats = null;
-var _lastBuildEvent = null;
+const _wsHeartbeat = function() {
+    this.isAlive = true;
+};
+
+const _noop = function() {};
+
+let _clientInjectString = null;
+let _intervalWsClientCheck;
+let _lastStats = null;
+let _lastBuildEvent = null;
+let _webServer;
+let _webSocketServer;
+
+let _configHost = null;
+let _configPort = null;
+let _configSslCert = null;
+let _configSslKey = null;
+
+let _webSocketServerProtocol = null;
+
+let _serverConfig = null;
+let _serverPort = null;
 
 function _sendMessage(buildEvent, stats) {
     if (_webSocketServer) {
@@ -39,29 +59,28 @@ function _sendMessage(buildEvent, stats) {
     }
 }
 
-function _startServer(portNum, cert, key) {
-    _webSocketServer = new WebSocket.Server({ port: portNum });
-
-    const noop = function() {};
-
-    const heartbeat = function() {
-        this.isAlive = true;
-    };
-
-    _webSocketServer.on("connection", (ws) => {
+function _webSocketServerSetup() {
+    _webSocketServer.on("connection", function connection(ws) {
         ws.isAlive = true;
-        ws.on("pong", heartbeat);
+        ws.on("pong", _wsHeartbeat);
 
         if (_lastBuildEvent !== null && _lastBuildEvent !== _typeBuildSuccess) {
             _sendMessage(_lastBuildEvent, _lastStats);
         }
+
+        ws.on("message", function incoming(message) {
+            console.log("websocket message received: %s", message);
+            if (message === "sslClientTest") {
+                ws.send("sslServerTest");
+            }
+        });
     });
 
     _webSocketServer.on("close", (code) => {
         console.error(`wpThemeServer exited with code ${code}`);
     });
 
-    const interval = setInterval(() => {
+    _intervalWsClientCheck = setInterval(() => {
         _webSocketServer.clients.forEach((ws) => {
             if (ws.isAlive === false) {
                 console.log("Browser refresh server: CONNECTION TERMINATED", ws);
@@ -69,13 +88,58 @@ function _startServer(portNum, cert, key) {
             }
 
             ws.isAlive = false;
-            ws.ping(noop);
+            ws.ping(_noop);
         });
     }, 30000);
 }
 
-let _clientInjectString = null;
-let _serverConfig = null;
+function _startNonSslServer() {
+    _webSocketServer = new WebSocket.Server({ port: _serverPort });
+    _webSocketServerSetup();
+}
+
+function _startSslServer() {
+    function getWsClientResp(hostName, portNum) {
+        return `
+        <script>
+            var host = "wss://${hostName}:${portNum}";
+            var socket = new WebSocket(host);
+            socket.onmessage = function(event) {
+                console.log("websocket message received: %s", event.data);
+                if (event.data === "sslServerTest") {
+                    setTimeout(function() {
+                        document.write("If you can read this, then the Browser Refresh Server is working with SSL!");
+                    }, 0);
+                }
+            }
+            socket.onopen = function (event) {
+                socket.send("sslClientTest");
+            };
+        </script>
+        `;
+    }
+
+    try {
+        _webServer = new https.createServer(
+            {
+                cert: fs.readFileSync(_configSslCert),
+                key: fs.readFileSync(_configSslKey)
+            },
+            (req, res) => {
+                res.writeHead(200);
+                res.end(getWsClientResp(_configHost, _serverPort));
+            }
+        );
+    } catch (err) {
+        console.log("Failed to start SSL server. ERR:", err);
+        process.exit(1);
+    }
+
+    _webSocketServer = new WebSocket.Server({ server: _webServer });
+    _webSocketServerSetup();
+
+    _webServer.listen(_serverPort);
+}
 
 const wpThemeServer = {
     getClientInjectString: function(mode, token) {
@@ -87,23 +151,9 @@ const wpThemeServer = {
             return _clientInjectString;
         }
 
-        let wsProtocol = "ws";
-        if (typeof _serverConfig.sslCert === "string" && _serverConfig.sslCert.length > 0) {
-            if (typeof _serverConfig.sslKey === "string" && _serverConfig.sslKey.length > 0) {
-                wsProtocol = "wss";
-            }
-        }
-
         const phpStuff = `<?php $BRC_TEMPLATE_PATH = parse_url(get_template_directory_uri(), PHP_URL_PATH); ?>`;
-        const jsTags = [
-            "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-utils/wpThemeClient.js'></script>",
-            "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-error-overlay/wpThemeErrorOverlay.js'></script>\n"
-        ];
-        const jsCall = `<script>
-        if (wpThemeClient && typeof wpThemeClient.start === "function") {
-            wpThemeClient.start("${wsProtocol}", "${_serverConfig.hostname}", "${_serverConfig.port}");
-        }
-        </script>\n`;
+        const jsTags = ["<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-utils/wpThemeClient.js'></script>", "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-error-overlay/wpThemeErrorOverlay.js'></script>\n"];
+        const jsCall = `<script> wpThemeClient.start("${_webSocketServerProtocol}", "${_configHost}", "${_serverPort}"); </script>\n`;
 
         let toInject = [];
         switch (mode) {
@@ -133,29 +183,27 @@ const wpThemeServer = {
         try {
             _serverConfig = _getUserConfig(paths, process.env.NODE_ENV).wpThemeServer;
         } catch (err) {
-            console.log("unable to get wpThemeServer config from user config.");
+            console.log("unable to get wpThemeServer config from user config. Err:", err);
             process.exit(1);
         }
 
-        let configPort = _serverConfig && typeof _serverConfig.port === "number" ? _serverConfig.port : null;
-        const portNum = parseInt(process.env.PORT, 10) || configPort || 8090;
-        if (portNum > 0) {
-            let cert = null;
-            let key = null;
-            if (typeof _serverConfig.sslCert === "string" && _serverConfig.sslCert.length > 0) {
-                if (typeof _serverConfig.sslKey === "string" && _serverConfig.sslKey.length > 0) {
-                    try {
-                        cert = fs.readFileSync(_serverConfig.sslCert);
-                        key = fs.readFileSync(_serverConfig.sslKey);
-                    } catch (err) {
-                        console.log("cert and/or key not found err:", err);
-                        return;
-                    }
-                }
+        _configHost = _serverConfig && typeof _serverConfig.host === "string" && _serverConfig.host.length > 0 ? _serverConfig.host : "127.0.0.1";
+        _configPort = _serverConfig && typeof _serverConfig.port === "number" ? _serverConfig.port : null;
+        _serverPort = parseInt(process.env.PORT, 10) || _configPort || 8090;
+
+        if (_serverPort > 0) {
+            _configSslCert = _serverConfig && typeof _serverConfig.sslCert === "string" && _serverConfig.sslCert.length > 0 ? _serverConfig.sslCert : null;
+            _configSslKey = _serverConfig && typeof _serverConfig.sslKey === "string" && _serverConfig.sslKey.length > 0 ? _serverConfig.sslKey : null;
+
+            if (typeof _configSslCert === "string" && typeof _configSslKey === "string") {
+                _webSocketServerProtocol = "wss";
+                _startSslServer();
+            } else {
+                _webSocketServerProtocol = "ws";
+                _startNonSslServer();
             }
 
-            _startServer(portNum, cert, key);
-            console.log("Browser refresh server ready.");
+            console.log("Browser Refresh Server ready.");
         }
     },
     update: function(stats) {

@@ -44,7 +44,7 @@ module.exports = function(paths, nodeEnv) {
         },
         wpThemeServer: {
             enable: true,
-            hostname: "__from-window__",
+            host: "127.0.0.1",
             port: 8090,
             sslCert: null,
             sslKey: null,

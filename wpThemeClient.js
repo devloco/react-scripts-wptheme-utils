@@ -6,28 +6,42 @@
  */
 
 var wpThemeClient = {
-    start: function(wsProtocol, configHostname, configPort) {
-        if (configHostname !== "__from-window__") {
-            if (typeof configHostname !== "string" || configHostname.length <= 0) {
-                console.log("WPTHEME CLIENT: hostname is not '__from-window__' or a non-empty string: ", configHostname);
+    start: function(wsHostProtocol, wsHostname, wsPort) {
+        var hostProtocol = null;
+        switch (wsHostProtocol) {
+            case "ws":
+            case "wss":
+                hostProtocol = wsHostProtocol;
+                break;
+            default:
+                console.log(`WPTHEME CLIENT: configHostProtocol is not "ws" or "wss": ` + new String(wsHostProtocol));
+                console.error("This is a bug. Please report to: https://github.com/devloco/create-react-wptheme/issues");
+                return;
+        }
+
+        if (wsHostname !== "__from-window__") {
+            if (typeof wsHostname !== "string" && wsHostname.length <= 0) {
+                console.log("WPTHEME CLIENT: hostname is not '__from-window__' or a non-empty string: ", wsHostname);
                 return;
             }
         }
 
         var parsedConfigPort = null;
-        if (configPort !== "__from-window__") {
-            parsedConfigPort = parseInt(configPort, 10);
+        if (wsPort !== "__from-window__") {
+            parsedConfigPort = parseInt(wsPort, 10);
             if (typeof parsedConfigPort !== "number") {
-                console.log("WPTHEME CLIENT: port is not '__from-window__' or a number: ", configPort);
+                console.log("WPTHEME CLIENT: port is not '__from-window__' or a number: ", wsPort);
                 return;
             }
         }
 
-        var hostName = configHostname === "__from-window__" ? window.location.hostname : configHostname;
-        var portNum = configPort === "__from-window__" ? window.location.port : parsedConfigPort;
-        var host = wsProtocol + "://" + hostName + ":" + portNum;
+        var hostName = wsHostname === "__from-window__" ? window.location.hostname : wsHostname;
+        var portNum = wsPort === "__from-window__" ? window.location.port : parsedConfigPort;
+        var hostURL = hostProtocol + "://" + hostName + ":" + portNum;
 
-        var socket = new WebSocket(host);
+        var newlyReloaded = true;
+
+        var socket = new WebSocket(hostURL);
         socket.onmessage = function(response) {
             if (response && typeof response.data === "string") {
                 try {
@@ -48,6 +62,10 @@ var wpThemeClient = {
                             case "warnings":
                                 try {
                                     wpThemeErrorOverlay.handleWarnings(msg.stats.warnings);
+                                    if (!newlyReloaded) {
+                                        // Webpack successfully creates a new compile if there are only warnings (unlike errors which do not compile at all).
+                                        window.location.reload();
+                                    }
                                 } catch (err) {
                                     console.log("'warnings' try block error:", err);
                                     console.log("Compile WARNINGS", err, msg);
@@ -61,6 +79,8 @@ var wpThemeClient = {
                         console.log("Raw websocket message:", response);
                     }
                 }
+
+                newlyReloaded = false;
             }
         };
 
