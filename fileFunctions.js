@@ -11,6 +11,8 @@ const fs = require("fs-extra");
 const { rm } = require("shelljs");
 const wpThemePostInstallerInfo = require("@devloco/react-scripts-wptheme-utils/postInstallerInfo");
 
+const _doNotEditFile = "../!DO_EDIT_THESE_FILES!.txt";
+
 const fileFunctions = {
     copyPublicFolder: function(paths) {
         fs.copySync(paths.appPublic, paths.appBuild, {
@@ -25,6 +27,17 @@ const fileFunctions = {
     },
     cleanThemeFolder: function() {
         rm("-rf", "../static");
+        rm("-f", _doNotEditFile);
+    },
+    writeDoNotEditFile: function() {
+        fs.access(_doNotEditFile, fs.constants.F_OK, (err) => {
+            if (err) {
+                let content = `Edit the files in the 'react-src/src' and 'react-src/public' folders instead.
+                These files are overwritten by Webpack every time you make edits to the files in those folders.
+                You will lose all changes made to these files when that happens.`;
+                fs.writeFile(_doNotEditFile, content, "utf8", (err) => {});
+            }
+        });
     }
 };
 
