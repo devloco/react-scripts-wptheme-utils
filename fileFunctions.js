@@ -12,7 +12,7 @@ const { rm } = require("shelljs");
 const wpThemePostInstallerInfo = require("@devloco/react-scripts-wptheme-utils/postInstallerInfo");
 
 const _doNotEditFile = "../!DO_NOT_EDIT_THESE_FILES!.txt";
-let _doNotEditContent = `Edit the files in the 'react-src/src' and 'react-src/public' folders instead.
+let _doNotEditContent = `Instead, edit the files in the 'react-src/src' and 'react-src/public' folders.
 These files are overwritten by Webpack every time you make edits to the files in those folders.
 You will lose all changes made to these files when that happens.`;
 

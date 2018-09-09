@@ -152,7 +152,10 @@ const wpThemeServer = {
         }
 
         const phpStuff = `<?php $BRC_TEMPLATE_PATH = parse_url(get_template_directory_uri(), PHP_URL_PATH); ?>`;
-        const jsTags = ["<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-utils/wpThemeClient.js'></script>", "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-error-overlay/wpThemeErrorOverlay.js'></script>\n"];
+        const jsTags = [
+            "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-utils/wpThemeClient.js'></script>",
+            "<script src='<?php echo $BRC_TEMPLATE_PATH; ?>/react-src/node_modules/@devloco/react-scripts-wptheme-error-overlay/wpThemeErrorOverlay.js'></script>\n"
+        ];
         const jsCall = `<script> wpThemeClient.start("${_webSocketServerProtocol}", "${_configHost}", "${_serverPort}"); </script>\n`;
 
         let toInject = [];
