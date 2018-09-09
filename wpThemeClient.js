@@ -86,7 +86,21 @@ var wpThemeClient = {
 
         socket.onclose = function() {
             if (console && typeof console.info === "function") {
-                console.info("Probably a refresh happened.\nBut it's possible the browser refresh server has disconnected.\nYou can manually refresh the page if necessary.");
+                switch (socket.readyState) {
+                    case socket.CLOSED:
+                    case socket.CLOSING:
+                        setTimeout(() => {
+                            console.info("It's possible the browser refresh server has disconnected.\nYou can manually refresh the page if necessary.");
+                        }, 1000);
+                        break;
+                }
+            }
+        };
+
+        socket.onopen = function() {
+            if (console && typeof console.clear === "function") {
+                console.clear();
+                console.info("The browser refresh server is connected.");
             }
         };
     }
