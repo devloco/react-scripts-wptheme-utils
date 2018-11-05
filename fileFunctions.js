@@ -35,7 +35,13 @@ const fileFunctions = {
     },
     setupCopyToThemeFolder: function(paths) {
       const indexPhp = path.join(paths.appPublic, "index.php");
+      const styleCss = path.join(paths.appPublic, "style.css");
+      const screenShotPng = path.join(paths.appPublic, "screenshot.png");
+      const favIconIco = path.join(paths.appPublic, "favicon.ico");
       cp("-rf", indexPhp, "..");
+      cp("-rf", styleCss, "..");
+      cp("-rf", screenShotPng, "..");
+      cp("-rf", favIconIco, "..");
     },
     writeDoNotEditFile: function() {
         fs.access(_doNotEditFile, fs.constants.F_OK, (err) => {
