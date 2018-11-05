@@ -36,20 +36,20 @@ function FileWatcherPlugin(options) {
     this.options = options;
 }
 
-FileWatcherPlugin.prototype.apply = function(compiler) {
+FileWatcherPlugin.prototype.apply = function (compiler) {
     if (!this.options) {
         return;
     }
 
     const options = this.options;
     const touchFile = options.touchFile;
-    const forceBuild = function(touchFileName) {
+    const forceBuild = function (touchFileName) {
         // -c to not create a file if one doesn't already exist.
         // Remember this file needs to be watched by WebPack, thus it should already exist
         touch("-c", touchFileName);
     };
 
-    compiler.plugin("done", function(compilation) {
+    compiler.hooks.done.tap("FileWatcherPlugin", function (compilation) {
         var watcher = chokidar.watch(options.watchFileGlobs, {
             persistent: options.persistance || true,
             ignored: options.ignored || false,
@@ -75,71 +75,71 @@ FileWatcherPlugin.prototype.apply = function(compiler) {
             .on(
                 "add",
                 options.onAddCallback ||
-                    function(path) {
-                        //forceBuild(touchFile); // causes infinite loops for "add"
-                        return null;
-                    }
+                function (path) {
+                    //forceBuild(touchFile); // causes infinite loops for "add"
+                    return null;
+                }
             )
             .on(
                 "change",
                 options.onChangeCallback ||
-                    function(path) {
-                        // console.log(`\n\n Compilation Started  after change of - ${path} \n\n`);
-                        // compiler.run(function(err) {
-                        //     if (err) throw err;
-                        //     watcher.close();
-                        // });
-                        //console.log(`\n\n Compilation ended  for change of - ${path} \n\n`);
-                        forceBuild(touchFile);
-                    }
+                function (path) {
+                    // console.log(`\n\n Compilation Started  after change of - ${path} \n\n`);
+                    // compiler.run(function(err) {
+                    //     if (err) throw err;
+                    //     watcher.close();
+                    // });
+                    //console.log(`\n\n Compilation ended  for change of - ${path} \n\n`);
+                    forceBuild(touchFile);
+                }
             )
             .on(
                 "unlink",
                 options.onUnlinkCallback ||
-                    function(path) {
-                        // console.log(`File ${path} has been removed`);
-                        forceBuild(touchFile);
-                    }
+                function (path) {
+                    // console.log(`File ${path} has been removed`);
+                    forceBuild(touchFile);
+                }
             );
 
         watcher
             .on(
                 "addDir",
                 options.onAddDirCallback ||
-                    function(path) {
-                        // console.log(`Directory ${path} has been added`);
-                        forceBuild(touchFile);
-                    }
+                function (path) {
+                    // console.log(`Directory ${path} has been added`);
+                    forceBuild(touchFile);
+                }
             )
             .on(
                 "unlinkDir",
                 options.unlinkDirCallback ||
-                    function(path) {
-                        // console.log(`Directory ${path} has been removed`);
-                        forceBuild(touchFile);
-                    }
+                function (path) {
+                    // console.log(`Directory ${path} has been removed`);
+                    forceBuild(touchFile);
+                }
             )
             .on(
                 "error",
                 options.onErrorCallback ||
-                    function(error) {
-                        console.log(`FileWatcherPlugin error: ${error}`);
-                        return null;
-                    }
+                function (error) {
+                    console.log(`FileWatcherPlugin error: ${error}`);
+                    return null;
+                }
             )
             .on(
                 "ready",
                 options.onReadyCallback ||
-                    function() {
-                        console.log("Watching for changes in the Public folder.");
-                    }
+                function () {
+                    console.log("Watching for changes in the Public folder.");
+                }
             )
             .on(
                 "raw",
                 options.onRawCallback ||
-                    function(event, path, details) {
-                        return null;
-                    }
+                function (event, path, details) {
+                    return null;
+                }
             );
     });
 };
