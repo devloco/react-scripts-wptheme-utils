@@ -8,7 +8,8 @@
 "use strict";
 
 const fs = require("fs-extra");
-const { rm } = require("shelljs");
+const path = require('path');
+const { rm, cp } = require("shelljs");
 const wpThemePostInstallerInfo = require("@devloco/react-scripts-wptheme-utils/postInstallerInfo");
 
 const _doNotEditFile = "../!DO_NOT_EDIT_THESE_FILES!.txt";
@@ -24,13 +25,17 @@ const fileFunctions = {
         });
     },
     copyToThemeFolder: function(paths) {
-        fs.copySync(paths.appBuild, "..", {
-            dereference: true
-        });
+      fs.copySync(paths.appBuild, "..", {
+          dereference: true
+      });
     },
     cleanThemeFolder: function() {
         rm("-rf", "../static");
         rm("-f", _doNotEditFile);
+    },
+    setupCopyToThemeFolder: function(paths) {
+      const indexPhp = path.join(paths.appPublic, "index.php");
+      cp("-rf", indexPhp, "..");
     },
     writeDoNotEditFile: function() {
         fs.access(_doNotEditFile, fs.constants.F_OK, (err) => {
