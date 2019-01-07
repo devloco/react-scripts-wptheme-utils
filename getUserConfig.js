@@ -33,7 +33,7 @@ function _getUserConfig(paths, configName, defaultConfig) {
 const userDevConfigName = "user.dev.json";
 const userProdConfigName = "user.prod.json";
 
-module.exports = function(paths, nodeEnv) {
+module.exports = function (paths, nodeEnv) {
     const appPackageJson = require(paths.appPackageJson);
 
     const defaultUserDevConfig = {
@@ -59,7 +59,6 @@ module.exports = function(paths, nodeEnv) {
     };
 
     const defaultUserProdConfig = {
-        ensureTrailingSlash: true,
         homepage: appPackageJson.homepage
     };
 
