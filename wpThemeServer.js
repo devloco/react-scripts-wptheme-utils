@@ -8,12 +8,15 @@
 "use strict";
 
 const fs = require("fs");
+const path = require("path");
+const url = require("url");
 const https = require("https");
 const WebSocket = require("ws");
 
 const _getUserConfig = require("@devloco/react-scripts-wptheme-utils/getUserConfig");
 const _typeBuildError = "errors";
-const _typeBuildSuccess = "content-changed";
+const _typeBuildContentChanged = "content-changed";
+const _typeBuildSuccess = "success";
 const _typeBuildWarning = "warnings";
 
 const _wsHeartbeat = function() {
@@ -42,16 +45,35 @@ let _serverPort = null;
 function _sendMessage(buildEvent, stats) {
     if (_webSocketServer) {
         _webSocketServer.clients.forEach((ws) => {
+            const now = new Date().getTime().toString();
+
             if (ws.isAlive === true) {
-                let msg = JSON.stringify({
-                    now: new Date().getTime().toString(),
-                    stats: stats.toJson("normal"),
+                let theStats = {};
+                if (typeof stats.toJson === "function") {
+                    theStats = stats.toJson("normal");
+                } else {
+                    switch (buildEvent) {
+                        case _typeBuildError:
+                            theStats.errors = [stats[0]];
+                            break;
+                        case _typeBuildWarning:
+                            theStats.warnings = [stats[0]];
+                            break;
+                        default:
+                            theStats.errors = [];
+                            theStats.warnings = [];
+                    }
+                }
+
+                const msg = JSON.stringify({
+                    now: now,
+                    stats: theStats,
                     type: buildEvent
                 });
 
                 ws.send(msg);
 
-                if (buildEvent === _typeBuildSuccess) {
+                if (buildEvent === _typeBuildContentChanged) {
                     console.log("Browser refresh sent.");
                 }
             }
@@ -64,7 +86,7 @@ function _webSocketServerSetup() {
         ws.isAlive = true;
         ws.on("pong", _wsHeartbeat);
 
-        if (_lastBuildEvent !== null && _lastBuildEvent !== _typeBuildSuccess) {
+        if (_lastBuildEvent !== null) {
             _sendMessage(_lastBuildEvent, _lastStats);
         }
 
@@ -209,18 +231,34 @@ const wpThemeServer = {
             console.log("Browser Refresh Server ready.");
         }
     },
-    update: function(stats) {
+    update: function(stats, msgType) {
         if (stats) {
             _lastStats = stats;
-            if (stats.hasErrors()) {
-                _lastBuildEvent = _typeBuildError;
-                _sendMessage(_typeBuildError, _lastStats);
-            } else if (stats.hasWarnings()) {
-                _lastBuildEvent = _typeBuildWarning;
-                _sendMessage(_typeBuildWarning, _lastStats);
+
+            if (typeof stats.hasErrors === "undefined") {
+                // This is probably a TypeScript deferred message
+                switch (msgType) {
+                    case _typeBuildError:
+                        _lastBuildEvent = _typeBuildError;
+                        _sendMessage(_lastBuildEvent, _lastStats);
+                        break;
+                    case _typeBuildWarning:
+                        _lastBuildEvent = _typeBuildWarning;
+                        _sendMessage(_lastBuildEvent, _lastStats);
+                        break;
+                }
             } else {
-                _lastBuildEvent = _typeBuildSuccess;
-                _sendMessage(_typeBuildSuccess, _lastStats);
+                // Normal Webpack compile message
+                if (typeof stats.hasErrors === "function " && stats.hasErrors()) {
+                    _lastBuildEvent = _typeBuildError;
+                    _sendMessage(_lastBuildEvent, _lastStats);
+                } else if (typeof stats.hasWarnings === "function " && stats.hasWarnings()) {
+                    _lastBuildEvent = _typeBuildWarning;
+                    _sendMessage(_lastBuildEvent, _lastStats);
+                } else {
+                    _lastBuildEvent = _typeBuildContentChanged;
+                    _sendMessage(_lastBuildEvent, _lastStats);
+                }
             }
         }
     }

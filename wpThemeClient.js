@@ -6,7 +6,7 @@
  */
 
 var wpThemeClient = {
-  start: function (wsHostProtocol, wsHostname, wsPort) {
+  start: function(wsHostProtocol, wsHostname, wsPort) {
       var hostProtocol = null;
       switch (wsHostProtocol) {
           case "ws":
@@ -42,14 +42,26 @@ var wpThemeClient = {
       var newlyReloaded = true;
 
       var socket = new WebSocket(hostURL);
-      socket.onmessage = function (response) {
+      socket.onmessage = function(response) {
           if (response && typeof response.data === "string") {
               try {
                   var msg = JSON.parse(response.data);
+                  if (msg.type === "content-changed") {
+                      if (msg.stats.errors && msg.stats.errors.length > 0) {
+                          msg.type = "errors";
+                      }
+                      if (msg.stats.warnings && msg.stats.warnings.length > 0) {
+                          msg.type = "warnings";
+                      }
+                  }
+
                   if (msg) {
                       switch (msg.type) {
                           case "content-changed":
-                              window.location.reload();
+                              if (!newlyReloaded) {
+                                  // Webpack successfully creates a new compile if there are only warnings (unlike errors which do not compile at all).
+                                  window.location.reload();
+                              }
                               break;
                           case "errors":
                               try {
@@ -84,7 +96,7 @@ var wpThemeClient = {
           }
       };
 
-      socket.onclose = function () {
+      socket.onclose = function() {
           if (console && typeof console.info === "function") {
               switch (socket.readyState) {
                   case socket.CLOSED:
@@ -97,7 +109,7 @@ var wpThemeClient = {
           }
       };
 
-      socket.onopen = function () {
+      socket.onopen = function() {
           if (console && typeof console.clear === "function") {
               //console.clear();
               console.info("The browser refresh server is connected.");
