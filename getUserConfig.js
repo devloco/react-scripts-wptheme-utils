@@ -12,6 +12,9 @@ const chalk = require("chalk");
 const path = require("path");
 const wpThemePostInstallerInfo = require("@devloco/react-scripts-wptheme-utils/postInstallerInfo");
 
+const _userDevConfigName = "user.dev.json";
+const _userProdConfigName = "user.prod.json";
+
 function _writeUserConfig(paths, configName, configString) {
     let configPath = path.join(paths.appPath, configName);
     fs.writeFileSync(configPath, configString);
@@ -29,9 +32,6 @@ function _getUserConfig(paths, configName, defaultConfig) {
 
     return userConfig;
 }
-
-const userDevConfigName = "user.dev.json";
-const userProdConfigName = "user.prod.json";
 
 module.exports = function (paths, nodeEnv) {
     const appPackageJson = require(paths.appPackageJson);
@@ -52,8 +52,6 @@ module.exports = function (paths, nodeEnv) {
         },
         injectWpThemeClient: {
             override: null,
-            mode: "beforeToken",
-            token: "</body>",
             file: "./build/index.php"
         }
     };
@@ -64,8 +62,8 @@ module.exports = function (paths, nodeEnv) {
 
     // Create both files ASAP.
     if (!wpThemePostInstallerInfo.postInstallerExists(paths)) {
-        _getUserConfig(paths, userDevConfigName, defaultUserDevConfig);
-        _getUserConfig(paths, userProdConfigName, defaultUserProdConfig);
+        _getUserConfig(paths, _userDevConfigName, defaultUserDevConfig);
+        _getUserConfig(paths, _userProdConfigName, defaultUserProdConfig);
     }
 
     if (wpThemePostInstallerInfo.postInstallerExists(paths)) {
@@ -79,11 +77,11 @@ module.exports = function (paths, nodeEnv) {
     switch (nodeEnv) {
         case "dev":
         case "development":
-            return _getUserConfig(paths, userDevConfigName, defaultUserDevConfig);
+            return _getUserConfig(paths, _userDevConfigName, defaultUserDevConfig);
         case "build":
         case "prod":
         case "production":
-            return _getUserConfig(paths, userProdConfigName, defaultUserProdConfig);
+            return _getUserConfig(paths, _userProdConfigName, defaultUserProdConfig);
         default:
             console.log(chalk.red(`Unknown env.NODE_ENV: ${nodeEnv}`));
             return null;
