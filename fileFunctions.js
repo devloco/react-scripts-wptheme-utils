@@ -30,8 +30,9 @@ const fileFunctions = {
       });
     },
     cleanThemeFolder: function() {
-        rm("-rf", "../static");
-        rm("-f", _doNotEditFile);
+      rm("-rf", "../static");
+      rm("-r", "../precache*");
+      rm("-f", _doNotEditFile);
     },
     setupCopyToThemeFolder: function(paths) {
       const indexPhp = path.join(paths.appPublic, "index.php");
