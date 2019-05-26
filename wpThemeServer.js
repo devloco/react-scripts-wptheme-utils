@@ -27,10 +27,13 @@ const _noop = function() {};
 
 let _clientInjectString = null;
 let _intervalWsClientCheck;
-let _lastStats = null;
-let _lastBuildEvent = null;
 let _webServer;
 let _webSocketServer;
+
+let _lastBuildEvent = null;
+let _lastStats = {
+    hash: undefined
+};
 
 let _configHost = null;
 let _configPort = null;
@@ -43,9 +46,16 @@ let _serverConfig = null;
 let _serverPort = null;
 
 function _sendMessage(buildEvent, stats) {
-    if (_webSocketServer) {
+    if (_webSocketServer && stats && stats.hash && stats.hash !== _lastStats.hash) {
+        // Initial build... there are no clients for the clients.forEach below.
+        if (_lastStats.hash === undefined) {
+            _lastBuildEvent = buildEvent;
+            _lastStats = stats;
+        }
+
         _webSocketServer.clients.forEach((ws) => {
-            const now = new Date().getTime().toString();
+            _lastBuildEvent = buildEvent;
+            _lastStats = stats;
 
             if (ws.isAlive === true) {
                 let theStats = {};
@@ -66,11 +76,11 @@ function _sendMessage(buildEvent, stats) {
                 }
 
                 const msg = JSON.stringify({
-                    now: now,
                     stats: theStats,
                     type: buildEvent
                 });
 
+                ws.hash = stats.hash;
                 ws.send(msg);
 
                 if (buildEvent === _typeBuildContentChanged) {
@@ -86,7 +96,7 @@ function _webSocketServerSetup() {
         ws.isAlive = true;
         ws.on("pong", _wsHeartbeat);
 
-        if (_lastBuildEvent !== null) {
+        if (ws.hash !== _lastStats.hash) {
             _sendMessage(_lastBuildEvent, _lastStats);
         }
 
@@ -233,31 +243,24 @@ const wpThemeServer = {
     },
     update: function(stats, msgType) {
         if (stats) {
-            _lastStats = stats;
-
             if (typeof stats.hasErrors === "undefined") {
                 // This is probably a TypeScript deferred message
                 switch (msgType) {
                     case _typeBuildError:
-                        _lastBuildEvent = _typeBuildError;
-                        _sendMessage(_lastBuildEvent, _lastStats);
+                        _sendMessage(_typeBuildError, stats);
                         break;
                     case _typeBuildWarning:
-                        _lastBuildEvent = _typeBuildWarning;
-                        _sendMessage(_lastBuildEvent, _lastStats);
+                        _sendMessage(_typeBuildWarning, stats);
                         break;
                 }
             } else {
                 // Normal Webpack compile message
                 if (typeof stats.hasErrors === "function " && stats.hasErrors()) {
-                    _lastBuildEvent = _typeBuildError;
-                    _sendMessage(_lastBuildEvent, _lastStats);
+                    _sendMessage(_typeBuildError, stats);
                 } else if (typeof stats.hasWarnings === "function " && stats.hasWarnings()) {
-                    _lastBuildEvent = _typeBuildWarning;
-                    _sendMessage(_lastBuildEvent, _lastStats);
+                    _sendMessage(_typeBuildWarning, stats);
                 } else {
-                    _lastBuildEvent = _typeBuildContentChanged;
-                    _sendMessage(_lastBuildEvent, _lastStats);
+                    _sendMessage(_typeBuildContentChanged, stats);
                 }
             }
         }
