@@ -25,9 +25,8 @@ const fileFunctions = {
         });
     },
     copyToThemeFolder: function(paths) {
-        fs.copySync(paths.appBuild, "..", {
-            dereference: true
-        });
+        const copyFrom = path.join(paths.appBuild, "/*");
+        cp("-rf", copyFrom, "..");
     },
     cleanThemeFolder: function(cleanAll) {
         rm("-rf", "../static");
