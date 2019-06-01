@@ -96,14 +96,34 @@ function _webSocketServerSetup() {
         ws.isAlive = true;
         ws.on("pong", _wsHeartbeat);
 
-        if (ws.hash !== _lastStats.hash) {
-            _sendMessage(_lastBuildEvent, _lastStats);
-        }
+        // Issue #17, take 1; always send a hash-check on connection.
+        //
+        // if (ws.hash !== _lastStats.hash) {
+        //     _sendMessage(_lastBuildEvent, _lastStats);
+        // }
+        const msgJson = JSON.stringify({
+            type: "hash-check",
+            hash: _lastStats.hash
+        });
+        ws.send(msgJson);
 
         ws.on("message", function incoming(message) {
-            console.log("websocket message received: %s", message);
-            if (message === "sslClientTest") {
-                ws.send("sslServerTest");
+            const messageObj = JSON.parse(message);
+
+            switch (messageObj.type) {
+                case "hash-check":
+                    const msgJson = JSON.stringify({
+                        type: "hash-check",
+                        stats: {
+                            hash: _lastStats.hash
+                        }
+                    });
+                    ws.send(msgJson);
+                    break;
+                case "ssl-client-test":
+                    console.log("websocket message received: %s", messageObj.type);
+                    ws.send("ssl-server-test");
+                    break;
             }
         });
     });
@@ -138,14 +158,18 @@ function _startSslServer() {
             var socket = new WebSocket(host);
             socket.onmessage = function(event) {
                 console.log("websocket message received: %s", event.data);
-                if (event.data === "sslServerTest") {
+                if (event.data === "ssl-server-test") {
                     setTimeout(function() {
                         document.write("If you can read this, then the Browser Refresh Server is working with SSL!");
                     }, 0);
                 }
             }
             socket.onopen = function (event) {
-                socket.send("sslClientTest");
+                var msgJson = JSON.stringify({
+                    type: "ssl-client-test"
+                });
+
+                socket.send(msgJson);
             };
         </script>
         `;

@@ -7,6 +7,7 @@
 
 var wpThemeClient = {
     hash: null,
+    socket: null,
     start: function(wsHostProtocol, wsHostname, wsPort) {
         var hostProtocol = null;
         switch (wsHostProtocol) {
@@ -42,27 +43,27 @@ var wpThemeClient = {
 
         var newlyReloaded = true;
 
-        var socket = new WebSocket(hostURL);
-        socket.onmessage = function(response) {
+        wpThemeClient.socket = new WebSocket(hostURL);
+        wpThemeClient.socket.onmessage = function(response) {
             if (response && typeof response.data === "string") {
                 try {
                     var msg = JSON.parse(response.data);
-                    if (msg.type === "content-changed") {
-                        if (msg.stats.errors && msg.stats.errors.length > 0) {
-                            msg.type = "errors";
-                        }
-                        if (msg.stats.warnings && msg.stats.warnings.length > 0) {
-                            msg.type = "warnings";
-                        }
-                    }
 
                     if (msg) {
-                        // console.log("MSG", msg);
-                        // console.log("HASH", wpThemeClient.hash, msg.stats.hash);
+                        var msgHash = msg && msg.stats && msg.stats.hash;
+
+                        if (msg.type === "content-changed") {
+                            if (msg.stats.errors && msg.stats.errors.length > 0) {
+                                msg.type = "errors";
+                            }
+                            if (msg.stats.warnings && msg.stats.warnings.length > 0) {
+                                msg.type = "warnings";
+                            }
+                        }
+
                         switch (msg.type) {
                             case "content-changed":
-                                var msgHash = msg && msg.stats && msg.stats.hash;
-                                if (!newlyReloaded || (wpThemeClient.hash === null && typeof msgHash === "string" && msgHash.length > 0)) {
+                                if (!newlyReloaded || (wpThemeClient.hash === null || (typeof msgHash === "string" && msgHash.length > 0 && msgHash !== wpThemeClient.hash))) {
                                     // Webpack successfully creates a new compile if there are only warnings (unlike errors which do not compile at all).
                                     window.location.reload();
                                 }
@@ -73,6 +74,23 @@ var wpThemeClient = {
                                 } catch (err) {
                                     console.log("'errors' try block error:", err);
                                     console.log("Compile ERRORS", msg);
+                                }
+                                break;
+                            case "hash-check":
+                                if (wpThemeClient.hash === null) {
+                                    wpThemeClient.hash = msgHash;
+                                    setTimeout(() => {
+                                        // In 500ms, let's double-check we have the latest hash... a build on the server may have gotten missed.
+                                        if (wpThemeClient.socket && wpThemeClient.socket.send) {
+                                            var msgJson = JSON.stringify({
+                                                type: "hash-check"
+                                            });
+
+                                            wpThemeClient.socket.send(msgJson);
+                                        }
+                                    }, 500);
+                                } else if (!newlyReloaded && typeof wpThemeClient.hash === "string" && wpThemeClient.hash !== msgHash) {
+                                    window.location.reload();
                                 }
                                 break;
                             case "warnings":
@@ -97,15 +115,15 @@ var wpThemeClient = {
                 }
 
                 newlyReloaded = false;
-                wpThemeClient.hash = msg.stats.hash;
+                wpThemeClient.hash = typeof msgHash === "string" && msgHash.length > 0 ? msgHash : null;
             }
         };
 
-        socket.onclose = function() {
+        wpThemeClient.socket.onclose = function() {
             if (console && typeof console.info === "function") {
-                switch (socket.readyState) {
-                    case socket.CLOSED:
-                    case socket.CLOSING:
+                switch (wpThemeClient.socket.readyState) {
+                    case wpThemeClient.socket.CLOSED:
+                    case wpThemeClient.socket.CLOSING:
                         setTimeout(() => {
                             console.info("It's possible the browser refresh server has disconnected.\nYou can manually refresh the page if necessary.");
                         }, 1000);
@@ -114,7 +132,7 @@ var wpThemeClient = {
             }
         };
 
-        socket.onopen = function() {
+        wpThemeClient.socket.onopen = function() {
             if (console && typeof console.clear === "function") {
                 //console.clear();
                 console.info("The browser refresh server is connected.");

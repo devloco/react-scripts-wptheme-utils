@@ -8,7 +8,7 @@
 "use strict";
 
 const fs = require("fs-extra");
-const path = require('path');
+const path = require("path");
 const { rm, cp } = require("shelljs");
 const wpThemePostInstallerInfo = require("@devloco/react-scripts-wptheme-utils/postInstallerInfo");
 
@@ -25,24 +25,27 @@ const fileFunctions = {
         });
     },
     copyToThemeFolder: function(paths) {
-      fs.copySync(paths.appBuild, "..", {
-          dereference: true
-      });
+        fs.copySync(paths.appBuild, "..", {
+            dereference: true
+        });
     },
-    cleanThemeFolder: function() {
-      rm("-rf", "../static");
-      rm("-r", "../precache*");
-      rm("-f", _doNotEditFile);
+    cleanThemeFolder: function(cleanAll) {
+        rm("-rf", "../static");
+
+        if (cleanAll === true) {
+            rm("-f", _doNotEditFile);
+            rm("-r", "../precache*");
+        }
     },
     setupCopyToThemeFolder: function(paths) {
-      const indexPhp = path.join(paths.appPublic, "index.php");
-      const styleCss = path.join(paths.appPublic, "style.css");
-      const screenShotPng = path.join(paths.appPublic, "screenshot.png");
-      const favIconIco = path.join(paths.appPublic, "favicon.ico");
-      cp("-rf", indexPhp, "..");
-      cp("-rf", styleCss, "..");
-      cp("-rf", screenShotPng, "..");
-      cp("-rf", favIconIco, "..");
+        const indexPhp = path.join(paths.appPublic, "index.php");
+        const styleCss = path.join(paths.appPublic, "style.css");
+        const screenShotPng = path.join(paths.appPublic, "screenshot.png");
+        const favIconIco = path.join(paths.appPublic, "favicon.ico");
+        cp("-rf", indexPhp, "..");
+        cp("-rf", styleCss, "..");
+        cp("-rf", screenShotPng, "..");
+        cp("-rf", favIconIco, "..");
     },
     writeDoNotEditFile: function() {
         fs.access(_doNotEditFile, fs.constants.F_OK, (err) => {
