@@ -1,6 +1,6 @@
 {
     "name": "@devloco/react-scripts-wptheme-utils",
-    "version": "1.4.5",
+    "version": "1.4.9",
     "description": "Utilities used by react-scripts-wptheme.",
     "engines": {
         "node": ">=8"
