@@ -33,7 +33,7 @@ function _getUserConfig(paths, configName, defaultConfig) {
     return userConfig;
 }
 
-module.exports = function (paths, nodeEnv) {
+module.exports = function(paths, nodeEnv) {
     const appPackageJson = require(paths.appPackageJson);
 
     const defaultUserDevConfig = {
