@@ -1,6 +1,6 @@
 {
     "name": "@devloco/react-scripts-wptheme-utils",
-    "version": "3.1.202",
+    "version": "3.2.001",
     "description": "Utilities used by react-scripts-wptheme.",
     "engines": {
         "node": ">=8"
@@ -44,7 +44,7 @@
     ],
     "dependencies": {
         "chalk": "^2.4.2",
-        "chokidar": "^3.1.1",
+        "chokidar": "^3.2.1",
         "shelljs": "^0.8.3",
         "fs-extra": "^8.1.0",
         "ws": "^7.1.2"
