@@ -96,11 +96,6 @@ function _webSocketServerSetup() {
         ws.isAlive = true;
         ws.on("pong", _wsHeartbeat);
 
-        // Issue #17, take 1; always send a hash-check on connection.
-        //
-        // if (ws.hash !== _lastStats.hash) {
-        //     _sendMessage(_lastBuildEvent, _lastStats);
-        // }
         const msgJson = JSON.stringify({
             type: "hash-check",
             hash: _lastStats.hash
