@@ -57,6 +57,7 @@ module.exports = function(paths, nodeEnv) {
     };
 
     const defaultUserProdConfig = {
+        finalBuildPath: null,
         homepage: appPackageJson.homepage
     };
 
